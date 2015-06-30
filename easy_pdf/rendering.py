@@ -116,12 +116,12 @@ def make_response(content, filename=None, inline=False,
     """
     response = HttpResponse(content, content_type=content_type)
 
-    disp = "attachment"
+    disp = "inline"
     if inline:
         disp = "inline"
 
     if filename is not None:
-        response["Content-Disposition"] = "{}; {}".format(
+        response["Content-Disposition"] = 'inline; "test.pdf"'.format(
             disp, encode_filename(filename)
         )
 
