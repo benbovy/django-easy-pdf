@@ -99,7 +99,8 @@ def encode_filename(filename):
         return "filename*=UTF-8''%s" % quoted
 
 
-def make_response(content, filename=None, content_type="application/pdf"):
+def make_response(content, filename=None, inline=False,
+                  content_type="application/pdf"):
     """
     Wraps content into HTTP response.
 
@@ -114,8 +115,16 @@ def make_response(content, filename=None, content_type="application/pdf"):
     :rtype: :class:`django.http.HttpResponse`
     """
     response = HttpResponse(content, content_type=content_type)
+
+    disp = "attachment"
+    if inline:
+        disp = "inline"
+
     if filename is not None:
-        response["Content-Disposition"] = "attachment; %s" % encode_filename(filename)
+        response["Content-Disposition"] = "{}; {}".format(
+            disp, encode_filename(filename)
+        )
+
     return response
 
 
@@ -140,13 +149,14 @@ def render_to_pdf(template, context, encoding="utf-8", **kwargs):
 
 
 def render_to_pdf_response(request, template, context, filename=None,
-                           encoding="utf-8", **kwargs):
+                           inline=False, encoding="utf-8", **kwargs):
     """
     Renders a PDF response using given ``request``, ``template`` and ``context``.
 
     If ``filename`` param is specified then the response ``Content-Disposition``
     header will be set to ``attachment`` making the browser display
-    a "Save as.." dialog.
+    a "Save as.." dialog, or to ``inline`` if ``inline`` is True making
+    the browser display the pdf.
 
     :param request: Django request
     :type request: :class:`django.http.HttpRequest`
@@ -164,7 +174,7 @@ def render_to_pdf_response(request, template, context, filename=None,
 
     try:
         pdf = render_to_pdf(template, context, encoding=encoding, **kwargs)
-        return make_response(pdf, filename)
+        return make_response(pdf, filename, inline)
     except PDFRenderingError as e:
         logger.exception(e.message)
         return HttpResponse(e.message)
